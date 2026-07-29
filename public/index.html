@@ -1,0 +1,71 @@
+cat << 'EOF' > public/index.html
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>NooDio Snake Game</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="orientation-warning">
+    <div class="warning-icon">📱</div>
+    <div>Lütfen Cihazınızı Yatay Döndürün</div>
+  </div>
+
+  <div id="menu">
+    <h1 class="game-title">NooDio</h1>
+    <div class="menu-box">
+      <input type="text" id="nickname" placeholder="İsim" maxlength="16">
+      <div id="error-msg"></div>
+      <button id="play-btn">OYNA</button>
+    </div>
+  </div>
+
+  <div id="loading-screen" class="hidden">
+    <h2>Yükleniyor...</h2>
+    <div id="loading-bar">
+      <div id="loading-bar-fill"></div>
+    </div>
+    <div id="loading-text">%0</div>
+  </div>
+
+  <div id="game-ui" class="hidden">
+    <canvas id="minimapCanvas" width="100" height="100"></canvas>
+
+    <div id="leaderboard">
+      <h3>Lider Tablosu</h3>
+      <ul id="leaderboard-list"></ul>
+    </div>
+
+    <div id="top-score-container">
+      <span class="score-title">PUAN:</span>
+      <span id="current-score">0</span>
+    </div>
+
+    <div id="joystick-zone">
+      <div id="joystick-base">
+        <div id="joystick-stick"></div>
+      </div>
+    </div>
+
+    <button id="dash-btn">Depar</button>
+  </div>
+
+  <div id="death-screen" class="hidden">
+    <div class="death-box">
+      <h1>ÖLDÜNÜZ!</h1>
+      <div class="death-score-container">
+        <span class="death-score-title">SKOR</span>
+        <span id="final-score">0</span>
+      </div>
+      <button id="respawn-btn">TEKRAR OYNA</button>
+    </div>
+  </div>
+
+  <canvas id="gameCanvas"></canvas>
+
+  <script src="game.js"></script>
+</body>
+</html>
+EOF
