@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && ex>
+    "test": "echo \"Error: no test specified\" && ex>"
   },
   "keywords": [],
   "author": "",
