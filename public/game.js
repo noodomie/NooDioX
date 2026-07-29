@@ -1,7 +1,7 @@
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas ? canvas.getContext('2d') : null;
+Const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
 const minimapCanvas = document.getElementById('minimapCanvas');
-const minimapCtx = minimapCanvas ? minimapCanvas.getContext('2d') : null;
+const minimapCtx = minimapCanvas.getContext('2d');
 
 const playBtn = document.getElementById('play-btn');
 const nicknameInput = document.getElementById('nickname');
@@ -16,7 +16,6 @@ const deathScreen = document.getElementById('death-screen');
 const respawnBtn = document.getElementById('respawn-btn');
 const currentScoreElem = document.getElementById('current-score');
 const finalScoreElem = document.getElementById('final-score');
-const leaderboardList = document.getElementById('leaderboard-list');
 
 let socket = null;
 let myId = null;
@@ -28,7 +27,7 @@ let isDashing = false;
 let dpr = Math.min(window.devicePixelRatio || 1, 2);
 
 function dismissKeyboard(e) {
-  if (nicknameInput && e.target !== nicknameInput) {
+  if (e.target !== nicknameInput) {
     nicknameInput.blur();
   }
 }
@@ -36,20 +35,12 @@ document.addEventListener('touchstart', dismissKeyboard);
 document.addEventListener('mousedown', dismissKeyboard);
 
 function resizeCanvas() {
-  if (!canvas) return;
   dpr = Math.min(window.devicePixelRatio || 1, 2);
   canvas.width = window.innerWidth * dpr;
   canvas.height = window.innerHeight * dpr;
-  canvas.style.width = window.innerWidth + 'px';
-  canvas.style.height = window.innerHeight + 'px';
 }
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
-
-if (minimapCanvas) {
-  minimapCanvas.width = 100;
-  minimapCanvas.height = 100;
-}
 
 function enableFullscreen() {
   const doc = document.documentElement;
@@ -69,126 +60,117 @@ function enableFullscreen() {
 document.addEventListener('touchstart', enableFullscreen, { once: true });
 document.addEventListener('click', enableFullscreen, { once: true });
 
-if (playBtn) {
-  playBtn.addEventListener('click', () => {
-    enableFullscreen();
-    const name = nicknameInput ? nicknameInput.value.trim() : '';
-    if (name.length < 1 || name.length > 16) {
-      if (errorMsg) errorMsg.innerText = 'Hatalı İsim';
-      return;
-    }
-    if (errorMsg) errorMsg.innerText = '';
-    playBtn.disabled = true;
+playBtn.addEventListener('click', () => {
+  enableFullscreen();
+  const name = nicknameInput.value.trim();
+  if (name.length < 1 || name.length > 16) {
+    errorMsg.innerText = 'Hatalı İsim';
+    return;
+  }
+  errorMsg.innerText = '';
+  playBtn.disabled = true;
 
-    if (menu) menu.classList.add('hidden');
-    if (loadingScreen) loadingScreen.classList.remove('hidden');
+  menu.classList.add('hidden');
+  loadingScreen.classList.remove('hidden');
 
-    let progress = 0;
-    if (loadingBarFill) loadingBarFill.style.width = '0%';
-    if (loadingText) loadingText.innerText = '%0';
+  let progress = 0;
+  loadingBarFill.style.width = '0%';
+  loadingText.innerText = '%0';
 
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    socket = new WebSocket(`${wsProtocol}//${window.location.host}`);
+  const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  socket = new WebSocket(`${wsProtocol}//${window.location.host}`);
 
-    progress = 30;
-    if (loadingBarFill) loadingBarFill.style.width = progress + '%';
-    if (loadingText) loadingText.innerText = '%' + progress;
+  progress = 30;
+  loadingBarFill.style.width = progress + '%';
+  loadingText.innerText = '%' + progress;
 
-    socket.onopen = () => {
-      progress = 70;
-      if (loadingBarFill) loadingBarFill.style.width = progress + '%';
-      if (loadingText) loadingText.innerText = '%' + progress;
+  socket.onopen = () => {
+    progress = 70;
+    loadingBarFill.style.width = progress + '%';
+    loadingText.innerText = '%' + progress;
 
-      socket.send(JSON.stringify({
-        type: 'join',
-        name: name
-      }));
-    };
+    socket.send(JSON.stringify({
+      type: 'join',
+      name: name
+    }));
+  };
 
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+  socket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
 
-      if (data.type === 'error') {
-        if (errorMsg) errorMsg.innerText = data.message;
-        if (loadingScreen) loadingScreen.classList.add('hidden');
-        if (menu) menu.classList.remove('hidden');
-        playBtn.disabled = false;
-        socket.close();
-      } else if (data.type === 'init') {
-        myId = data.id;
-        mapSize = data.mapSize;
-        foods = data.foods;
-        players = data.players;
-
-        progress = 100;
-        if (loadingBarFill) loadingBarFill.style.width = '100%';
-        if (loadingText) loadingText.innerText = '%' + progress;
-
-        setTimeout(() => {
-          if (loadingScreen) loadingScreen.classList.add('hidden');
-          if (gameUI) gameUI.classList.remove('hidden');
-        }, 100);
-      } else if (data.type === 'state') {
-        players = data.players;
-        foods = data.foods;
-      } else if (data.type === 'died' && data.id === myId) {
-        if (gameUI) gameUI.classList.add('hidden');
-        if (deathScreen) deathScreen.classList.remove('hidden');
-        if (finalScoreElem && currentScoreElem) {
-          finalScoreElem.innerText = currentScoreElem.innerText;
-        }
-        if (socket) socket.close();
-      }
-    };
-
-    socket.onerror = () => {
-      if (errorMsg) errorMsg.innerText = 'Bağlantı Hatası';
-      if (loadingScreen) loadingScreen.classList.add('hidden');
-      if (menu) menu.classList.remove('hidden');
+    if (data.type === 'error') {
+      errorMsg.innerText = data.message;
+      loadingScreen.classList.add('hidden');
+      menu.classList.remove('hidden');
       playBtn.disabled = false;
-    };
-  });
-}
+      socket.close();
+    } else if (data.type === 'init') {
+      myId = data.id;
+      mapSize = data.mapSize;
+      foods = data.foods;
+      players = data.players;
 
-if (respawnBtn) {
-  respawnBtn.addEventListener('click', () => {
-    if (deathScreen) deathScreen.classList.add('hidden');
-    if (menu) menu.classList.remove('hidden');
-    if (playBtn) playBtn.disabled = false;
-  });
-}
+      progress = 100;
+      loadingBarFill.style.width = '100%';
+      loadingText.innerText = '%100';
 
-// Dokunmatik Kontroller (Mobil)
+      setTimeout(() => {
+        loadingScreen.classList.add('hidden');
+        gameUI.classList.remove('hidden');
+      }, 100);
+    } else if (data.type === 'state') {
+      players = data.players;
+      foods = data.foods;
+    } else if (data.type === 'died' && data.id === myId) {
+      gameUI.classList.add('hidden');
+      deathScreen.classList.remove('hidden');
+      if (finalScoreElem && currentScoreElem) {
+        finalScoreElem.innerText = currentScoreElem.innerText;
+      }
+      if (socket) socket.close();
+    }
+  };
+
+  socket.onerror = () => {
+    errorMsg.innerText = 'Bağlantı Hatası';
+    loadingScreen.classList.add('hidden');
+    menu.classList.remove('hidden');
+    playBtn.disabled = false;
+  };
+});
+
+respawnBtn.addEventListener('click', () => {
+  deathScreen.classList.add('hidden');
+  menu.classList.remove('hidden');
+  playBtn.disabled = false;
+});
+
 const joystickZone = document.getElementById('joystick-zone');
 const joystickStick = document.getElementById('joystick-stick');
 let joyActive = false;
 let joyStartPos = { x: 0, y: 0 };
 
-if (joystickZone) {
-  joystickZone.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    joyActive = true;
-    const touch = e.touches[0];
-    const rect = joystickZone.getBoundingClientRect();
-    joyStartPos = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-    updateJoystick(touch);
-  }, { passive: false });
+joystickZone.addEventListener('touchstart', (e) => {
+  joyActive = true;
+  const touch = e.touches[0];
+  const rect = joystickZone.getBoundingClientRect();
+  joyStartPos = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+  updateJoystick(touch);
+});
 
-  joystickZone.addEventListener('touchmove', (e) => {
-    e.preventDefault();
-    if (!joyActive) return;
-    updateJoystick(e.touches[0]);
-  }, { passive: false });
+joystickZone.addEventListener('touchmove', (e) => {
+  if (!joyActive) return;
+  updateJoystick(e.touches[0]);
+});
 
-  function handleTouchEnd(e) {
-    if (e.touches.length === 0) {
-      joyActive = false;
-      if (joystickStick) joystickStick.style.transform = `translate(0px, 0px)`;
-    }
+function handleTouchEnd(e) {
+  if (e.touches.length === 0) {
+    joyActive = false;
+    joystickStick.style.transform = `translate(0px, 0px)`;
   }
-  joystickZone.addEventListener('touchend', handleTouchEnd);
-  joystickZone.addEventListener('touchcancel', handleTouchEnd);
 }
+joystickZone.addEventListener('touchend', handleTouchEnd);
+joystickZone.addEventListener('touchcancel', handleTouchEnd);
 
 function updateJoystick(touch) {
   const dx = touch.clientX - joyStartPos.x;
@@ -197,69 +179,27 @@ function updateJoystick(touch) {
   const angle = Math.atan2(dy, dx);
 
   targetAngle = angle;
-  const maxRadius = 32;
+  const maxRadius = 32; // Büyütülen joystick kapağına özel ideal yarıçap
   const moveDist = Math.min(dist, maxRadius);
 
   const stickX = Math.cos(angle) * moveDist;
   const stickY = Math.sin(angle) * moveDist;
 
-  if (joystickStick) {
-    joystickStick.style.transform = `translate(${stickX}px, ${stickY}px)`;
-  }
+  joystickStick.style.transform = `translate(${stickX}px, ${stickY}px)`;
 
   sendInput();
 }
 
 const dashBtn = document.getElementById('dash-btn');
-if (dashBtn) {
-  dashBtn.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    isDashing = true;
-    sendInput();
-  }, { passive: false });
-  dashBtn.addEventListener('touchend', (e) => {
-    e.preventDefault();
-    isDashing = false;
-    sendInput();
-  }, { passive: false });
-}
-
-// Masaüstü (Mause ve Klavye) Kontrolleri
-window.addEventListener('mousemove', (e) => {
-  if (joyActive) return; // Mobil joystick aktifse fareyi yok say
-  const dx = e.clientX - window.innerWidth / 2;
-  const dy = e.clientY - window.innerHeight / 2;
-  targetAngle = Math.atan2(dy, dx);
+dashBtn.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  isDashing = true;
   sendInput();
 });
-
-window.addEventListener('mousedown', (e) => {
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
-  if (!joyActive) {
-    isDashing = true;
-    sendInput();
-  }
-});
-
-window.addEventListener('mouseup', () => {
-  if (!joyActive) {
-    isDashing = false;
-    sendInput();
-  }
-});
-
-window.addEventListener('keydown', (e) => {
-  if (e.code === 'Space') {
-    isDashing = true;
-    sendInput();
-  }
-});
-
-window.addEventListener('keyup', (e) => {
-  if (e.code === 'Space') {
-    isDashing = false;
-    sendInput();
-  }
+dashBtn.addEventListener('touchend', (e) => {
+  e.preventDefault();
+  isDashing = false;
+  sendInput();
 });
 
 function sendInput() {
@@ -273,8 +213,6 @@ function sendInput() {
 }
 
 function render() {
-  if (!ctx || !canvas) return requestAnimationFrame(render);
-
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   const me = players[myId];
@@ -378,7 +316,6 @@ function render() {
 }
 
 function renderMinimap() {
-  if (!minimapCtx) return;
   minimapCtx.clearRect(0, 0, 100, 100);
 
   minimapCtx.fillStyle = 'rgba(20, 20, 20, 0.85)';
@@ -410,9 +347,9 @@ function renderMinimap() {
 }
 
 function renderLeaderboard() {
-  if (!leaderboardList) return;
   const sorted = Object.values(players).sort((a, b) => b.score - a.score).slice(0, 5);
-  leaderboardList.innerHTML = '';
+  const list = document.getElementById('leaderboard-list');
+  list.innerHTML = '';
 
   sorted.forEach((p, index) => {
     const rank = index + 1;
@@ -426,7 +363,7 @@ function renderLeaderboard() {
       <span class="lb-name">${escapeHTML(p.name)}</span>
       <span class="lb-score">${p.score}</span>
     `;
-    leaderboardList.appendChild(li);
+    list.appendChild(li);
   });
 }
 
