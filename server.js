@@ -203,7 +203,9 @@ setInterval(() => {
   });
 }, 1000 / 30);
 
-const PORT = 3000;
-server.listen(PORT, () => {
-  console.log('NooDio Server çalışıyor: http://localhost:' + PORT);
+const PORT = process.env.PORT || 3000;
+
+// Render üzerinde dış istekleri kabul etmesi için '0.0.0.0' ip adresi eklendi
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server ${PORT} portunda çalışıyor`);
 });
